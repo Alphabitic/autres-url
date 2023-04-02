@@ -97,6 +97,10 @@ const checkLinks = async () => {
 
 
 const sendEmail = async (results) => {
+  if (!Array.isArray(results)) {
+    console.error('Erreur: "results" n\'est pas un tableau');
+    return;
+  }
   const tableRows = results.map(result => {
     let link = result.link;
     let remark = result.remark;
