@@ -52,7 +52,7 @@ const checkLinks = async () => {
 
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
-  page.setDefaultNavigationTimeout(60000);
+  page.setDefaultTimeout(60000);  
 
   const results = [];
   for (const link of links) {
