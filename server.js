@@ -3,16 +3,16 @@ const nodemailer = require('nodemailer');
 const cron = require('node-cron');
 const dotenv = require('dotenv');
 const express = require('express');
-const axios=require("axios");
 dotenv.config();
 
-const PORT=5001;
+const PORT = 5001;
 
 const app = express();
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
 });
+
 const transporter = nodemailer.createTransport({
   host: 'smtp.office365.com',
   port: 587,
@@ -22,6 +22,7 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASSWORD
   }
 });
+
 const Status = {
   Success: 'success',
   Failure: 'failure'
@@ -69,17 +70,7 @@ const checkLinks = async () => {
       success = true;
     } catch (error) {
       console.log(`${link} - Failure with Puppeteer`);
-      try {
-        const response = await axios.head(link, { timeout: 5000 });
-        if (response.status === 200) {
-          console.log(`${link} - success with Axios`);
-          success = true;
-        } else {
-          console.log(`${link} - Failure with Axios`);
-        }
-      } catch (error) {
-        console.log(`${link} - Failure with Axios`);
-      }
+      console.log(error);
     }
     const status = success ? 'success' : 'failure';
     console.log(`${link} - ${status}`);
@@ -95,7 +86,6 @@ const checkLinks = async () => {
   return results;
 };
 
-
 const sendEmail = async (results) => {
   if (!Array.isArray(results)) {
     console.error('Erreur: "results" n\'est pas un tableau');
@@ -108,11 +98,11 @@ const sendEmail = async (results) => {
       link = link.split('/lm_auth_proxy?')[0];
     }
     if (link === 'https://envoludia.neocles.com') {
-      return `<tr><td>${result.num}</td><td><a href="${result.link}">${link}</a></td><td><span>🤔</span></td><td>A vérifier sur Nomade - ${remark}</td></tr>`;
+      return `<tr><td style="border: 1px solid black; padding: 10px;">${result.num}</td><td style="border: 1px solid black; padding: 10px;"><a href="${result.link}">${link}</a></td><td style="border: 1px solid black; padding: 10px;"><span>🤔</span></td><td style="border: 1px solid black; padding: 10px;">A vérifier sur Nomade - ${remark}</td></tr>`;
     }
-    return `<tr><td>${result.num}</td><td><a href="${result.link}">${link}</a></td><td style="color: orange;">${result.status}</td><td>${remark}</td></tr>`
+    return `<tr><td style="border: 1px solid black; padding: 10px;">${result.num}</td><td style="border: 1px solid black; padding: 10px;"><a href="${result.link}">${link}</a></td><td style="border: 1px solid #A9A9A9; padding: 10px; color: orange;">${result.status}</td><td style="border: 1px solid black; padding: 10px;">${remark}</td></tr>`
   }).join('');
-  const emailContent =`  <html style="border-collapse: collapse; margin: 0 auto; font-family: 'Times New Roman', Times, serif;"> <head> <style> table { border-collapse: collapse; margin: 0 auto; } th { background-color: black; color: orange; padding: 10px; border: 1px solid white; } td { border: 1px solid black; padding: 10px; border: 1px solid white; } </style> </head> <body> <table> <thead> <tr> <th style="border: 1px solid black;">N°</th> <th style="border: 1px solid black;">URL</th> <th style="border: 1px solid white;">Status</th> <th style="border: 1px solid black;">Note</th> </tr> </thead> <tbody> ${tableRows} </tbody> </table> <a href="https://mxtoolbox.com/">MXTOOLBOX</a></body> </html>` ;
+  const emailContent =` <html style="border-collapse: collapse; margin: 0 auto; font-family: 'Times New Roman', Times, serif;"> <head> <style> table { border-collapse: collapse; margin: 0 auto; } th { background-color: black; color: orange; padding: 10px; border: 1px solid #A9A9A9; } td { border: 1px solid white; padding: 10px; border: 1px solid white; } </style> </head> <body> <table> <thead> <tr> <th style="border: 1px solid white; padding: 10px;">N°</th> <th style="border: 1px solid white; padding: 10px;">URL</th> <th style="border: 1px solid white; padding: 10px;">Status</th> <th style="border: 1px solid white; padding: 10px;">Note</th> </tr> </thead> <tbody> ${tableRows} </tbody> </table> <a href="https://mxtoolbox.com/">MXTOOLBOX</a></body> </html>` ;
   const mailOptions = {
     from: process.env.EMAIL_ADDRESS,
     to: 'zola_andria@outlook.fr',
@@ -130,11 +120,14 @@ const sendEmail = async (results) => {
 };
 
 // Planifier l'exécution toutes les 10 minutes
+async function runAll() {
+  const results = await checkLinks();
+  await sendEmail(results);
+}
 
-  console.log('Vérification des liens en cours...');
-  const results =  checkLinks();
-   sendEmail(results);
+runAll();
 
-   app.listen(PORT, () => {
-    console.log(`Le serveur est démarré sur le port ${PORT}`)
-  })
+
+app.listen(PORT, () => {
+  console.log(`Le serveur est démarré sur le port ${PORT}`)
+});
